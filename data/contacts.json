@@ -1,0 +1,13 @@
+{
+  "note": "Invented contacts. Only these addresses may receive an email from MailMate.",
+  "contacts": [
+    { "address": "a.serikova@uni.example", "name": "Aigul Serikova", "role": "teacher" },
+    { "address": "dean.office@uni.example", "name": "Dean's office", "role": "university" },
+    { "address": "daniyar.q@uni.example", "name": "Daniyar", "role": "groupmate" },
+    { "address": "mom@family.example", "name": "Mom", "role": "family" },
+    { "address": "library@uni.example", "name": "University library", "role": "university" },
+    { "address": "it-support@uni.example", "name": "IT support", "role": "university" },
+    { "address": "internship@company.example", "name": "Internship team", "role": "work" },
+    { "address": "notify@bank.example", "name": "My bank", "role": "bank" }
+  ]
+}
