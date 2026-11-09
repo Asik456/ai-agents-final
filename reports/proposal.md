@@ -40,16 +40,16 @@ A level. It is an autonomous multi-step agent with tools, state, planning and gu
 
 | Function | Purpose | Input | Output | Dependencies |
 |---|---|---|---|---|
-| `complete(messages, tools)` | Call the model | chat messages, tool schemas | `{ text, toolCalls: [{ id, name, arguments }] }` | OpenRouter API (`fetch`), `.env` key |
-| `listEmails({ folder, unreadOnly })` | List emails | folder name (`inbox` only), boolean | `[{ id, from, subject, date, unread }]` | `data/inbox.json` |
-| `readEmail({ id })` | Read one email | email id (`E-01` … ) | `{ id, from, to, subject, date, body, untrusted: true }` | `data/inbox.json` |
-| `lookupContact({ address })` | Check if a sender is known | email address | `{ known, name, role }` | `data/contacts.json` |
-| `draftReply({ id, text })` | Save a reply draft | email id, reply text (1–2000 chars) | `{ draftId, file }` | `drafts/` folder |
-| `sendEmail({ draftId })` | Send a draft | draft id | `{ sent: true, file }` or an error | approval prompt, `outbox/`, contact allow-list |
-| `validateArgs(tool, args)` | Check tool arguments before running | tool name, arguments | `ok` or a clear error | tool schemas |
-| `checkPermission(tool, args, state)` | Enforce what the agent may do | tool name, arguments, state | allowed / needs approval / blocked | policy table in code |
-| `runAgent(goal, options)` | The agent loop: plan → act → observe → update state → continue, replan or stop | user goal, limits | final report JSON + trace | all of the above |
-| `validateReport(json)` | Check the final structured output | model JSON | the same object or an error | — |
+| `make_model()` | Create the model client | settings from `.env` | a chat model that can call tools | `langchain-openai`, OpenRouter, `.env` key |
+| `list_emails(folder, unread_only)` | List emails | folder name (`inbox` only), boolean | `[{ id, from, subject, date, unread }]` | `data/inbox.json` |
+| `read_email(email_id)` | Read one email | email id (`E-01` … ) | `{ id, from, to, subject, date, body, untrusted: true }` | `data/inbox.json` |
+| `lookup_contact(address)` | Check if a sender is known | email address | `{ known, name, role }` | `data/contacts.json` |
+| `draft_reply(email_id, text)` | Save a reply draft | email id, reply text (1–2000 chars) | `{ draft_id, file }` | `drafts/` folder |
+| `send_email(draft_id)` | Send a draft | draft id | `{ sent: true, file }` or an error | approval prompt, `outbox/`, contact allow-list |
+| `validate_args(tool, args)` | Check tool arguments before running | tool name, arguments | `ok` or a clear error | tool schemas |
+| `check_permission(tool, args, state)` | Enforce what the agent may do | tool name, arguments, state | allowed / needs approval / blocked | policy table in code |
+| `build_agent()` | The LangGraph graph: plan → model → gate → approval → execute → observe → continue, replan or stop | user goal, limits | final report JSON + trace | `langgraph`, all of the above |
+| `validate_report(data)` | Check the final structured output | model JSON | the same object or an error | — |
 
 ## Proposed Agent Tools
 
@@ -68,35 +68,36 @@ There is no delete tool and no shell tool. If the model asks for any other tool 
 ## Model Selection
 
 - Model: `openai/gpt-5.6-luna` through OpenRouter (OpenAI-compatible Chat Completions API with tool calling). I already used it in HW3–HW5. It is cheap and it can call tools.
-- Language: JavaScript on Node.js 22 with the built-in `fetch`, so I don't need extra packages.
+- Language: Python 3.12 with LangGraph. I used LangGraph in HW5, and the Week 10 lecture builds an agent with the same parts I need (gate, approval with `interrupt`, checkpointer, trace).
+- Change in week 11: in week 10 I planned JavaScript with my own loop. I switched to Python + LangGraph because it matches the course lecture and my HW5 experience, so I can explain every node better.
 - Tests: a fake model with scripted answers. Tests run without an API key and give the same result every time.
 
 ## Architecture
 
+A LangGraph graph. Each box is a node; the agent loops until it finishes or a limit stops it.
+
 ```text
-User goal ("deal with my inbox")
-        │
-        ▼
- Agent loop (runAgent), state: goal, plan, emails seen, drafts, approvals, errors, step count
-        │
-        ▼
- Model (complete): chooses the next action (tool call) or finishes
-        │
-        ▼
- Guardrails in code:  allowed tool? → valid arguments? → permission / approval? → limits?
-        │                     (blocked calls are logged and returned to the model as errors)
-        ▼
- Tool execution (list / read / lookup / draft / send)
-        │
-        ▼
- Observe result → update state → trace log
-        │
-        ▼
- Continue │ Replan (tool failed, missing data) │ Stop (goal done, limit reached, cannot continue)
-        │
-        ▼
- Final report JSON (completed / partial / failed / needs approval), checked by validateReport
+START
+  │
+input_guard ─── message too long or has private data ──► stop
+  │
+plan            short checklist for the goal
+  │
+model           the LLM chooses the next tool or writes the final answer
+  │
+gate            in code: known tool? valid arguments? allowed? limits left?
+  │   │  blocked → error message back to the model
+  │   └─ send_email → review: interrupt(), wait for my "yes"
+  │
+execute         run the tool (list / read / lookup / draft / send)
+  │
+  └──► back to model (observe result, update state, write trace)
+
+model has no more tool calls ──► output_guard (check the final JSON and that sent files exist) ──► END
+limit reached / too many errors ──► stop (with the reason) ──► END
 ```
+
+State: messages, plan, emails seen, drafts, pending action, approval, tool and model call counters, errors, trace, stop reason.
 
 ## Example Requests
 
