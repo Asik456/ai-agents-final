@@ -1,3 +1,29 @@
+# MailMate — my project (Askar Zhurabekov)
+
+MailMate is an email secretary agent. It reads my inbox, says what is important, explains emails in simple words and writes reply drafts. It sends nothing without my "yes". All emails are invented test data in `data/`.
+
+Plan: [reports/proposal.md](reports/proposal.md). Weekly reports: [reports/](reports/).
+
+## How to run
+
+Python 3.12 is needed.
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # then put your OpenRouter key in LLM_API_KEY
+```
+
+Summarize one or more emails:
+
+```bash
+python -m mailmate.summary E-01
+python -m mailmate.summary E-01 E-05 E-10
+```
+
+---
+
 # AI Agents — Final Project
 
 **CSS 4007 — Artificial Intelligence · Individual project · Your choice of topic**
