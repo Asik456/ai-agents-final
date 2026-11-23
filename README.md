@@ -22,6 +22,18 @@ python -m mailmate.summary E-01
 python -m mailmate.summary E-01 E-05 E-10
 ```
 
+Sort all emails into urgent / needs_reply / info / spam / suspicious and compare with my own labels:
+
+```bash
+python -m mailmate.triage
+```
+
+Run the tests (no API key needed, they use a fake model):
+
+```bash
+python -m pytest tests/ -v
+```
+
 ---
 
 # AI Agents — Final Project
