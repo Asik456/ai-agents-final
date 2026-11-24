@@ -28,6 +28,14 @@ Sort all emails into urgent / needs_reply / info / spam / suspicious and compare
 python -m mailmate.triage
 ```
 
+Run the agent with a task. The model chooses the tools by itself (list, read, contact lookup, draft, send). Before sending, it asks you "Allow? (yes/no)":
+
+```bash
+python -m mailmate.agent "Which unread emails need a reply? Read them, then save a short draft reply for the email from my teacher."
+```
+
+Drafts are saved in `drafts/`. Sending is simulated: approved emails go to `outbox/sent.json`.
+
 Run the tests (no API key needed, they use a fake model):
 
 ```bash
