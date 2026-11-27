@@ -36,6 +36,14 @@ python -m mailmate.agent "Which unread emails need a reply? Read them, then save
 
 Drafts are saved in `drafts/`. Sending is simulated: approved emails go to `outbox/sent.json`.
 
+Daily digest: the agent reads all unread emails, groups them (dangerous / urgent / needs reply / info / spam), finds deadlines and saves reply drafts for known contacts. It sends nothing:
+
+```bash
+python -m mailmate.digest
+```
+
+The digest is saved in `digests/`. Example: [reports/digest-example.md](reports/digest-example.md).
+
 Run the tests (no API key needed, they use a fake model):
 
 ```bash
